@@ -2,6 +2,7 @@ import os
 import base64
 import streamlit as st
 import requests
+import json
 api_key ="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"
 
 from groq import Groq
@@ -82,3 +83,62 @@ def autoplay_audio(file_path: str):
     </audio>
     """
     st.markdown(md, unsafe_allow_html=True)
+
+
+# Replace with your actual Bland AI API key
+BLAND_AI_API_KEY = "0NMsT3lBn1aKBnmSCNQH3vuyhmsqsz6B"
+
+def make_call(phone_number, script):
+    url = "https://api.bland.ai/v1/calls"
+    headers = {
+        "Authorization": f"Bearer {BLAND_AI_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "phone_number": phone_number,
+        "task": script,
+        "voice": "male-1",  # You can change this to other available voices
+        "reduce_latency": True,
+        "record": True
+    }
+    
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    return response.json()
+
+def get_call_status(call_id):
+    url = f"https://api.bland.ai/v1/calls/{call_id}"
+    headers = {
+        "Authorization": f"Bearer {BLAND_AI_API_KEY}"
+    }
+    
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+def analyze_call(call_id):
+    url = f"https://api.bland.ai/v1/calls/{call_id}/analyze"
+    headers = {
+        "Authorization": f"Bearer {BLAND_AI_API_KEY}"
+    }
+    
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+# Example usage
+phone_number = "+1234567890"
+script = "Hello, this is an AI assistant. How may I help you today?"
+
+# Make a call
+call_response = make_call(phone_number, script)
+if "id" in call_response:
+    call_id = call_response["id"]
+    print(f"Call initiated with ID: {call_id}")
+
+    # Check call status
+    status = get_call_status(call_id)
+    print(f"Call status: {status['status']}")
+
+    # Analyze the call (after it's completed)
+    analysis = analyze_call(call_id)
+    print("Call analysis:", json.dumps(analysis, indent=2))
+else:
+    print("Failed to initiate call. Response:", call_response)
