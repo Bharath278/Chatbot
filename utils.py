@@ -10,7 +10,7 @@ from groq import Groq
 client = Groq(api_key=api_key)
 
 def get_answer(messages):
-    system_message = [{"role": "system", "content": "You are an helpful AI chatbot for my bakery which sells cakes and customer calls you to enquire about the price . Prices are chesscake-100 rupee venilla cake-200 raspberry cake-300 . Respond to queries with short sentences"}]
+    system_message = [{"role": "system", "content": "You are an helpful AI chatbot"}]
     messages = system_message + messages
     completion = client.chat.completions.create(
         model="llama3-70b-8192",
