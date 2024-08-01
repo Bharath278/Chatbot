@@ -84,61 +84,46 @@ def autoplay_audio(file_path: str):
     """
     st.markdown(md, unsafe_allow_html=True)
 
+from twilio.rest import Client
+from twilio.twiml.voice_response import VoiceResponse, Gather
 
-# Replace with your actual Bland AI API key
-BLAND_AI_API_KEY = "0NMsT3lBn1aKBnmSCNQH3vuyhmsqsz6B"
+# Your Twilio account credentials
+account_sid = ''
+auth_token = ''
+client = Client(account_sid, auth_token)
 
-def make_call(phone_number, script):
-    url = "https://api.bland.ai/v1/calls"
-    headers = {
-        "Authorization": f"Bearer {BLAND_AI_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "phone_number": phone_number,
-        "task": script,
-        "voice": "male-1",  # You can change this to other available voices
-        "reduce_latency": True,
-        "record": True
-    }
-    
-    response = requests.post(url, headers=headers, data=json.dumps(payload))
-    return response.json()
+def handle_incoming_call():
+    response = VoiceResponse()
+    gather = Gather(input='speech', action='/process_speech', method='POST')
+    gather.say('Welcome to the chatbot. How can I assist you today?')
+    response.append(gather)
+    return str(response)
 
-def get_call_status(call_id):
-    url = f"https://api.bland.ai/v1/calls/{call_id}"
-    headers = {
-        "Authorization": f"Bearer {BLAND_AI_API_KEY}"
-    }
-    
-    response = requests.get(url, headers=headers)
-    return response.json()
+def process_speech(speech_result):
+    # Process the speech result and generate a response
+    # This is where you'd integrate your chatbot logic
+    bot_response = "I understood you said: " + speech_result
 
-def analyze_call(call_id):
-    url = f"https://api.bland.ai/v1/calls/{call_id}/analyze"
-    headers = {
-        "Authorization": f"Bearer {BLAND_AI_API_KEY}"
-    }
-    
-    response = requests.get(url, headers=headers)
-    return response.json()
+    response = VoiceResponse()
+    response.say(bot_response)
+    response.gather(input='speech', action='/process_speech', method='POST')
+    return str(response)
 
 # Example usage
-phone_number = "+1234567890"
-script = "Hello, this is an AI assistant. How may I help you today?"
+@app.route('/incoming_call', methods=['POST'])
+def incoming_call():
+    return handle_incoming_call()
 
-# Make a call
-call_response = make_call(phone_number, script)
-if "id" in call_response:
-    call_id = call_response["id"]
-    print(f"Call initiated with ID: {call_id}")
+@app.route('/process_speech', methods=['POST'])
+def process_speech_route():
+    speech_result = request.form['SpeechResult']
+    return process_speech(speech_result)
 
-    # Check call status
-    status = get_call_status(call_id)
-    print(f"Call status: {status['status']}")
-
-    # Analyze the call (after it's completed)
-    analysis = analyze_call(call_id)
-    print("Call analysis:", json.dumps(analysis, indent=2))
-else:
-    print("Failed to initiate call. Response:", call_response)
+# Make an outbound call
+def make_outbound_call(to_number):
+    call = client.calls.create(
+        url='http://your-webhook-url.com/incoming_call',
+        to=to_number,
+        from_='877780-4236'
+    )
+    print(f"Call SID: {call.sid}")
